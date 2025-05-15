@@ -1,0 +1,27 @@
+@startuml domain model
+title Domain Model
+
+class User
+class Document
+class Receipt
+class Category
+class Report
+class OCRResult
+class UserPermissions
+class Authentication
+class WebInterface
+
+User "1" -- "*" Document : "creates"
+User "1" -- "*" Receipt : "uploads"
+Category "1" -- "*" Document : "categorizes"
+Category "1" -- "*" Receipt : "categorizes"
+Document "1" -- "1" Category : "belongs to"
+Receipt "1" -- "1" Category : "belongs to"
+Receipt "1" -- "1" OCRResult : "processed by"
+Document "*" -- "*" Report : "included in"
+User "1" -- "1" UserPermissions : "has"
+WebInterface "1" -- "*" Document : "displays"
+WebInterface "1" -- "*" Receipt : "manages"
+Authentication "1" -- "1" User : "authenticates"
+
+@enduml

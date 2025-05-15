@@ -1,0 +1,91 @@
+@startuml class diagram
+title Class Diagram
+
+class User {
+  +id: String
+  +name: String
+  +email: String
+  +userType: String
+  +login()
+  +logout()
+  +createUser()
+  +generateReports()
+}
+
+class Document {
+  +id: String
+  +title: String
+  +amount: Float
+  +status: String
+  +createdAt: Date
+  +create()
+  +approve()
+  +reject()
+}
+
+class Receipt {
+  +id: String
+  +amount: Float
+  +date: Date
+  +vendor: String
+  +imageUrl: String
+  +processOCR()
+  +submit()
+}
+
+class Category {
+  +id: String
+  +name: String
+  +assignCategory()
+}
+
+class Report {
+  +id: String
+  +title: String
+  +period: String
+  +generate()
+}
+
+class OCRResult {
+  +total: Float
+  +vendor: String
+  +date: Date
+  +extractData()
+}
+
+class UserPermissions {
+  +userId: String
+  +canCreateDocument: Boolean
+  +canUploadReceipt: Boolean
+  +canApproveDocument: Boolean
+  +canGenerateReport: Boolean
+  +assignPermissions()
+}
+
+class Authentication {
+  +login(email: String, password: String)
+  +logout()
+  +validateSession()
+  +generateAuthToken()
+  +validateAuthToken(token: String)
+}
+
+class WebInterface {
+  +displayReceipts()
+  +filterReceipts()
+  +viewReports()
+}
+
+User "1" -- "*" Document : "creates"
+User "1" -- "*" Receipt : "uploads"
+Category "1" -- "*" Document : "categorizes"
+Category "1" -- "*" Receipt : "categorizes"
+Document "1" -- "1" Category : "belongs to"
+Receipt "1" -- "1" Category : "belongs to"
+Receipt "1" -- "1" OCRResult : "processed by"
+Document "*" -- "*" Report : "included in"
+User "1" -- "1" UserPermissions : "has"
+WebInterface "1" -- "*" Document : "displays"
+WebInterface "1" -- "*" Receipt : "manages"
+Authentication "1" -- "1" User : "authenticates"
+@enduml

@@ -1,0 +1,83 @@
+@startuml Package Diagram
+left to right direction
+
+node ".bolt" {
+  class config.json
+}
+
+node ".expo" {
+  class devices.json
+  node types {
+  }
+  class "README.md" as ExpoReadme
+}
+
+package app {
+  class "_layout.tsx" as Layout
+  class "+not-found.tsx" as NotFound
+  package "(auth)" as Auth {
+  }
+  package "(tabs)" as Tabs {
+  }
+  package "document" as Document {
+    class "[id].tsx" as DocumentId
+  }
+}
+
+package assets {
+  class "adaptive-icon.png" as AdaptiveIcon
+  class "favicon.png" as Favicon
+  class "icon.png" as Icon
+  class "splash.png" as Splash
+}
+
+package Domain_model {
+  class "class_diagram.plantuml" as ClassDiagram
+  class "data_model.plantuml" as DataModel
+  class "domain-mod.plantuml" as DomainMod
+}
+
+package hooks {
+  ' Add classes if there are any specific hook files
+}
+
+package services {
+  ' Add classes if there are any specific service files
+}
+
+package src {
+  ' Add classes if there are any specific source files
+}
+
+package types {
+  ' Add classes if there are any specific type definition files
+}
+
+node root {
+  class ".env" as Env
+  class ".env.example" as EnvExample
+  class ".gitignore" as GitIgnore
+  class ".prettierrc" as Prettierrc
+  class "app.json" as AppJson
+  class "App.tsx" as AppTsx
+  class "babel.config.js" as BabelConfig
+  class "error.txt" as ErrorTxt
+  class "eslint.config.js" as EslintConfig
+  class "expo-env.d.ts" as ExpoEnv
+  class "index.html" as IndexHtml
+  class "package.json" as PackageJson
+  class "postcss.config.js" as PostcssConfig
+  class "tailwind.config.js" as TailwindConfig
+  class "tsconfig.app.json" as TsconfigApp
+  class "tsconfig.json" as Tsconfig
+  class "tsconfig.node.json" as TsconfigNode
+  class "vite.config.ts" as ViteConfig
+}
+
+' Relationships (example - adjust based on actual dependencies)
+app -- assets : Uses
+app -- hooks : Uses
+app -- services : Uses
+app -- types : Uses
+DocumentId -- types : Uses
+@enduml

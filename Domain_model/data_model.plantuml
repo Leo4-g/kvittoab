@@ -1,0 +1,42 @@
+@startuml data model
+entity "User" {
+  +id: String
+  +name: String
+  +email: String
+  +userType: String
+}
+
+entity "Document" {
+  +id: String
+  +title: String
+  +amount: Float
+  +status: String
+  +createdAt: Date
+  +userId: String
+}
+
+entity "Receipt" {
+  +id: String
+  +amount: Float
+  +date: Date
+  +vendor: String
+  +userId: String
+}
+
+entity "Category" {
+  +id: String
+  +name: String
+}
+
+entity "Report" {
+  +id: String
+  +title: String
+  +period: String
+  +userId: String
+}
+
+User -- Document
+User -- Receipt
+Document -- Category
+Document -- Report
+@enduml
