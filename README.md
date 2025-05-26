@@ -4,6 +4,7 @@ A modern web application for managing business receipts with OCR capabilities, b
 
 ## Features
 
+<<<<<<< HEAD
 - 🔐 Secure authentication system
 - 📸 Receipt scanning with OCR
 - ✍️ Manual receipt entry
@@ -11,6 +12,14 @@ A modern web application for managing business receipts with OCR capabilities, b
 - 📱 Responsive design
 - 🏷️ Category management
 - 📄 Report generation
+=======
+- Secure authentication system
+- Receipt scanning with OCR
+- Manual receipt entry
+- Dashboard with expense tracking
+- Category management
+- Report generation
+>>>>>>> 8207d8d55045cdcbab17e5c21a6fc5637c1bd001
 
 ## Tech Stack
 
@@ -103,4 +112,8 @@ src/
 
 ## License
 
+<<<<<<< HEAD
 This project is licensed under the MIT License - see the LICENSE file for details.
+=======
+This project is licensed under the MIT License - see the LICENSE file for details.
+>>>>>>> 8207d8d55045cdcbab17e5c21a6fc5637c1bd001
