@@ -67,13 +67,19 @@ export default function ScanReceiptPage() {
 
   const handleCameraCapture = async () => {
     try {
-      // Close camera interface if it's already open
+      // If camera interface is open, this button now acts as a close button
       if (showCameraInterface) {
         setShowCameraInterface(false);
         if (cameraStream) {
           cameraStream.getTracks().forEach(track => track.stop());
           setCameraStream(null);
         }
+        return;
+      }
+
+      // Check for secure context (HTTPS or localhost)
+      if (window.location.hostname !== 'localhost' && !window.isSecureContext) {
+        alert('Camera access is only available on secure (HTTPS) connections or localhost. Please use the upload option or ensure you are on a secure site.');
         return;
       }
 
@@ -89,17 +95,34 @@ export default function ScanReceiptPage() {
       });
       
       setCameraStream(stream);
-      setShowCameraInterface(true);
+      setShowCameraInterface(true); // Show interface first
       
-      // Set the video stream to the video element
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (error) {
+      // The new useEffect will handle attaching the stream to videoRef
+    } catch (error: any) {
       console.error('Error accessing camera:', error);
-      alert('Failed to access camera. Please check your camera permissions or use the upload option instead.');
+      setShowCameraInterface(false);
+      setCameraStream(null);
+
+      if (error.name === 'NotAllowedError') {
+        alert('Camera permission was denied. Please enable camera access for this site in your browser settings and try again.');
+      } else if (error.name === 'NotFoundError') {
+        alert('No camera was found on your device. Please ensure a camera is connected and enabled, or use the upload option.');
+      } else if (error.name === 'NotReadableError') {
+        alert('The camera is currently in use by another application or a hardware error occurred. Please close any other applications using the camera and try again.');
+      } else if (error.name === 'SecurityError') {
+        alert('Camera access is disabled due to security settings in your browser or operating system. This might happen on non-HTTPS sites.');
+      } else {
+        alert(`Failed to access camera. Error: ${error.message}. Please check your camera settings or use the upload option instead.`);
+      }
     }
   };
+
+  // Effect to manage video stream attachment
+  useEffect(() => {
+    if (showCameraInterface && cameraStream && videoRef.current && videoRef.current.srcObject !== cameraStream) {
+      videoRef.current.srcObject = cameraStream;
+    }
+  }, [showCameraInterface, cameraStream, videoRef]); // videoRef.current is not stable, so depend on videoRef
 
   const takePicture = () => {
     if (!videoRef.current || !canvasRef.current) return;
