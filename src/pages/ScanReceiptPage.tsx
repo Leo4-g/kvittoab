@@ -85,15 +85,22 @@ export default function ScanReceiptPage() {
 
       // Request camera access
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
+        audio: false
       });
-      
+
       setCameraStream(stream);
       setShowCameraInterface(true);
       
       // Set the video stream to the video element
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.play();
+
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
@@ -154,7 +161,7 @@ export default function ScanReceiptPage() {
       
       // Pre-fill form with extracted data
       if (result) {
-        if (result.total) setAmount(result.total.toString());
+        if (result.amount) setAmount(result.amount.toString());
         if (result.date) setDate(result.date);
         if (result.vendor) setVendor(result.vendor);
         setTitle(`Receipt from ${result.vendor || 'Unknown'}`);
@@ -233,6 +240,15 @@ export default function ScanReceiptPage() {
       setProcessing(false);
     }
   };
+
+  useEffect(() => {
+  if (videoRef.current && cameraStream) {
+    videoRef.current.srcObject = cameraStream;
+    videoRef.current.onloadedmetadata = () => {
+      videoRef.current?.play().catch(e => console.error('Error playing video:', e));
+    };
+  }
+}, [cameraStream]);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -318,12 +334,14 @@ export default function ScanReceiptPage() {
                 </div>
                 
                 <div className="relative">
-                  <video 
-                    ref={videoRef}
-                    autoPlay 
-                    playsInline
-                    className="w-full h-auto"
-                  ></video>
+                 <video 
+                  ref={videoRef}
+                  autoPlay 
+                  playsInline
+                  muted // Add this
+                  className="w-full h-[calc(100vh-200px)] object-cover" // Update this
+                  style={{ transform: 'scaleX(-1)' }} // Add this if using front camera
+                ></video>
                   <canvas ref={canvasRef} className="hidden"></canvas>
                 </div>
                 
