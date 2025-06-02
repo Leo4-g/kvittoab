@@ -16,11 +16,8 @@ function App() {
       <AuthProvider>
         <div className="min-h-screen bg-gray-100">
           <Routes>
-            {/* Public routes - no loading state */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
-            
-            {/* Protected routes - with loading state */}
             <Route 
               path="/" 
               element={
