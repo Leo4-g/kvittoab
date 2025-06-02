@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ScanReceiptPage from './pages/ScanReceiptPage';
 import ManualEntryPage from './pages/ManualEntryPage';
+import ReportsPage from './pages/ReportsPage';
 
 function App() {
   return (
@@ -48,6 +49,17 @@ function App() {
                   <>
                     <Navbar />
                     <ManualEntryPage />
+                  </>
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/reports"
+              element={
+                <PrivateRoute>
+                  <>
+                    <Navbar />
+                    <ReportsPage />
                   </>
                 </PrivateRoute>
               } 

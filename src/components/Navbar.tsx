@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Receipt, Home, LogOut, FileText, Camera } from 'lucide-react';
+import { Receipt, Home, LogOut, FileText, Camera, BarChart2 } from 'lucide-react';
 
 export default function Navbar() {
   const { currentUser, logout } = useAuth();
@@ -42,6 +42,11 @@ export default function Navbar() {
             <Link to="/manual-entry" className="flex items-center space-x-1 px-3 py-2 rounded hover:bg-indigo-700">
               <FileText className="h-5 w-5" />
               <span>Manual Entry</span>
+            </Link>
+            
+            <Link to="/reports" className="flex items-center space-x-1 px-3 py-2 rounded hover:bg-indigo-700">
+              <BarChart2 className="h-5 w-5" />
+              <span>Reports</span>
             </Link>
             
             <button 
