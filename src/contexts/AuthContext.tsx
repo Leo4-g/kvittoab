@@ -176,28 +176,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setLoading(true);
       const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       
-      if (error) {
-        console.error("Logout error:", error);
-        setLoading(false); // Ensure loading is false on error
-        throw error;
-      }
-      
-      // Successful sign-out
-      console.log("User signed out successfully from Supabase.");
-      setCurrentUser(null); // Explicitly set current user to null
-      setLoading(false);    // Explicitly set loading to false
-      // The onAuthStateChange listener will still fire and confirm this state,
-      // which is fine and handles external changes or token expiry.
-      
+      // Auth state change listener will handle setting the user to null
     } catch (error: any) {
-      // This catch block handles errors from operations before signOut or if signOut itself throws an unexpected error not caught above.
-      console.error("General logout function error:", error);
-      // Ensure loading is false if an unexpected error occurs and it wasn't set by the specific error handling.
-      if (loading) { // Check if loading is still true
-          setLoading(false);
-      }
-      throw error; // Re-throw the error to be caught by the caller (e.g., in Navbar)
+      console.error("Logout error:", error);
+      setLoading(false);
+      throw error;
     }
   }
 

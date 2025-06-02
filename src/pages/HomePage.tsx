@@ -20,7 +20,7 @@ export default function HomePage() {
           .from('receipts')
           .select('*')
           .eq('user_id', currentUser.id)
-          .order('created_at', { ascending: false });
+          .order('date', { ascending: false });
         
         if (error) throw error;
         
@@ -116,7 +116,9 @@ export default function HomePage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {receipts.map((receipt) => (
                   <tr key={receipt.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{receipt.date}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {new Date(receipt.date).toLocaleDateString()}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{receipt.vendor}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${receipt.amount.toFixed(2)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{receipt.tax_category}</td>
