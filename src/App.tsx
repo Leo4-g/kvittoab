@@ -8,6 +8,7 @@ import SignupPage from './pages/SignupPage';
 import ScanReceiptPage from './pages/ScanReceiptPage';
 import ManualEntryPage from './pages/ManualEntryPage';
 import ReportsPage from './pages/ReportsPage';
+import SettingsPage from './pages/SettingsPage';
 
 function App() {
   return (
@@ -60,6 +61,17 @@ function App() {
                   <>
                     <Navbar />
                     <ReportsPage />
+                  </>
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/settings"
+              element={
+                <PrivateRoute>
+                  <>
+                    <Navbar />
+                    <SettingsPage />
                   </>
                 </PrivateRoute>
               } 
