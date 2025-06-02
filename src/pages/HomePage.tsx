@@ -20,7 +20,7 @@ export default function HomePage() {
           .from('receipts')
           .select('*')
           .eq('user_id', currentUser.id)
-          .order('date', { ascending: false });
+          .order('created_at', { ascending: false });
         
         if (error) throw error;
         
