@@ -1,147 +1,131 @@
-// src/pages/HomePage.tsx
-
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
-import { useAuth } from '../contexts/AuthContext'; // Justera import‐sökvägen efter din struktur
-
-type Receipt = {
-  id: number;
-  vendor: string;
-  amount: number;
-  category: string;
-  date: string;   // ISO‐string, t.ex. "2025-06-02T00:00:00+00:00"
-  user_id: string; // Se till att din tabell faktiskt har denna kolumn
-};
+import { useAuth } from '../contexts/AuthContext';
+import { Receipt } from '../types';
+import { PlusCircle, Receipt as ReceiptIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function HomePage() {
+  const { currentUser } = useAuth();
   const [receipts, setReceipts] = useState<Receipt[]>([]);
-  const [total, setTotal] = useState<number>(0);
-  const navigate = useNavigate();
-  const { user } = useAuth(); // Anta att du har en Auth‐hook som ger dig user.id
+  const [loading, setLoading] = useState(true);
+  const [totalAmount, setTotalAmount] = useState(0);
 
   useEffect(() => {
     async function fetchReceipts() {
-      if (!user) return;
-
-      // 1) Filtrera på inloggad användare (user_id = user.id)
-      // 2) Sortera på date i fallande ordning (nyast först)
-      const { data, error } = await supabase
-        .from<Receipt>('receipts')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false });
-
-      if (error) {
-        console.error('Fel vid inläsning av kvitton:', error);
-        return;
-      }
-
-      if (data) {
-        setReceipts(data);
-
-        // Beräkna totalen över de hämtade kvittona
-        const sum = data.reduce((acc, r) => acc + r.amount, 0);
-        setTotal(sum);
+      if (!currentUser) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('receipts')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        const receiptsData = data || [];
+        let total = 0;
+        
+        receiptsData.forEach((receipt) => {
+          total += receipt.amount;
+        });
+        
+        setReceipts(receiptsData);
+        setTotalAmount(total);
+      } catch (error) {
+        console.error('Error fetching receipts:', error);
+      } finally {
+        setLoading(false);
       }
     }
-
+    
     fetchReceipts();
-  }, [user]);
+  }, [currentUser]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* ====================== HEADER + KNAPPAR ====================== */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <div className="space-x-2">
-          <button
-            onClick={() => navigate('/scan')}
-            className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
+        <div className="flex space-x-4">
+          <Link 
+            to="/scan" 
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md flex items-center"
           >
+            <PlusCircle className="mr-2 h-5 w-5" />
             Scan Receipt
-          </button>
-          <button
-            onClick={() => navigate('/manual-entry')}
-            className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
+          </Link>
+          <Link 
+            to="/manual-entry" 
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md flex items-center"
           >
+            <PlusCircle className="mr-2 h-5 w-5" />
             Manual Entry
-          </button>
+          </Link>
         </div>
       </div>
 
-      {/* ====================== DASHBOARD‐KORT ====================== */}
-      <div className="grid grid-cols-3 gap-4">
-        {/* Total Expenses */}
-        <div className="bg-white shadow rounded-lg p-4">
-          <h3 className="text-gray-600 text-sm font-medium">Total Expenses</h3>
-          <p className="text-2xl font-semibold mt-1">
-            ${total.toFixed(2)}
-          </p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-lg font-semibold text-gray-700 mb-2">Total Expenses</h2>
+          <p className="text-3xl font-bold text-indigo-600">${totalAmount.toFixed(2)}</p>
         </div>
-
-        {/* Receipts Count */}
-        <div className="bg-white shadow rounded-lg p-4">
-          <h3 className="text-gray-600 text-sm font-medium">Receipts Count</h3>
-          <p className="text-2xl font-semibold mt-1">
-            {receipts.length}
-          </p>
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-lg font-semibold text-gray-700 mb-2">Receipts Count</h2>
+          <p className="text-3xl font-bold text-indigo-600">{receipts.length}</p>
         </div>
-
-        {/* Latest Receipt */}
-        <div className="bg-white shadow rounded-lg p-4">
-          <h3 className="text-gray-600 text-sm font-medium">
-            Latest Receipt
-          </h3>
-          {receipts[0] ? (
-            <p className="text-2xl font-semibold mt-1">
-              ${receipts[0].amount.toFixed(2)}
-            </p>
-          ) : (
-            <p className="text-2xl font-semibold mt-1">—</p>
-          )}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-lg font-semibold text-gray-700 mb-2">Latest Receipt</h2>
+          <p className="text-3xl font-bold text-indigo-600">
+            {receipts.length > 0 
+              ? `$${receipts[0].amount.toFixed(2)}` 
+              : 'No receipts yet'}
+          </p>
         </div>
       </div>
 
-      {/* ====================== RECENT RECEIPTS‐TABELL ====================== */}
-      <div className="bg-white shadow rounded-lg overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                DATE
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                VENDOR
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                AMOUNT
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                CATEGORY
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {receipts.map((r) => (
-              <tr key={r.id}>
-                {/* 2) Visa bara YYYY-MM-DD (ta bort "T00:00:00+00:00") */}
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {r.date.slice(0, 10)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {r.vendor}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  ${r.amount.toFixed(2)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {r.category}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-800">Recent Receipts</h2>
+        </div>
+        
+        {receipts.length === 0 ? (
+          <div className="p-6 text-center text-gray-500">
+            <ReceiptIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <p>No receipts found. Start by scanning or manually adding a receipt.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {receipts.map((receipt) => (
+                  <tr key={receipt.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{receipt.date}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{receipt.vendor}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${receipt.amount.toFixed(2)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{receipt.tax_category}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
