@@ -1,4 +1,5 @@
 import { analyzeReceiptImage, extractReceiptInfo } from './googleVision';
+import { supabase } from '../supabase';
 
 // Process receipt with OCR
 export async function processReceiptWithOCR(file: File) {
@@ -26,20 +27,56 @@ export async function processReceiptWithOCR(file: File) {
 // Upload document to storage and database
 export async function uploadDocument(documentData: any) {
   try {
-    // In a real implementation, this would:
-    // 1. Upload the image to storage (Firebase Storage, Supabase Storage, etc.)
-    // 2. Save the document metadata to the database
-    
-    // For now, we'll just simulate a successful upload
-    console.log('Document data to upload:', documentData);
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    return {
-      success: true,
-      documentId: 'doc_' + Math.random().toString(36).substr(2, 9)
-    };
+    const {
+      title,
+      amount,
+      date,
+      vendor,
+      taxCategory,
+      notes,
+      userId,
+      transactionType,
+      image, // <-- Pass the File object here
+    } = documentData;
+
+    let imageUrl = null;
+    if (image) {
+      const fileExt = image.name.split('.').pop();
+      const fileName = `${userId}-${Date.now()}.${fileExt}`;
+      const { data, error: uploadError } = await supabase.storage
+        .from('receipts')
+        .upload(fileName, image);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: publicUrlData } = supabase
+        .storage
+        .from('receipts')
+        .getPublicUrl(fileName);
+      imageUrl = publicUrlData.publicUrl;
+    }
+
+    // If expense, make amount negative
+    let finalAmount = parseFloat(amount);
+    if (transactionType === 'expense' && finalAmount > 0) {
+      finalAmount = -finalAmount;
+    }
+
+    const { error } = await supabase.from('receipts').insert({
+      date,
+      amount: finalAmount,
+      vendor,
+      tax_category: taxCategory,
+      notes,
+      user_id: userId,
+      type: transactionType,
+      title,
+      image_url: imageUrl, // <-- Save the image URL
+    });
+
+    if (error) throw error;
+    return { success: true };
   } catch (error) {
     console.error('Error uploading document:', error);
     throw error;
@@ -55,3 +92,4 @@ function fileToBase64(file: File): Promise<string> {
     reader.onerror = error => reject(error);
   });
 }
+

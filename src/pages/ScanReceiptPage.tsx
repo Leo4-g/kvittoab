@@ -3,6 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import { Camera, Upload, TrendingUp, TrendingDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { processReceiptWithOCR, uploadDocument } from '../services/documentService';
+import { supabase } from '../supabase';
+
+// Add this shared category list at the top (outside the component)
+const expenseCategories = [
+  { value: "business", label: "Business Expense (General)" },
+  { value: "travel", label: "Travel" },
+  { value: "meals", label: "Meals & Entertainment" },
+  { value: "office", label: "Office Supplies" },
+  { value: "marketing", label: "Marketing & Advertising" },
+  { value: "utilities", label: "Utilities" },
+  { value: "rent", label: "Rent" },
+  { value: "insurance", label: "Insurance" },
+  { value: "subscriptions", label: "Subscriptions & Software" },
+  { value: "maintenance", label: "Maintenance & Repairs" },
+  { value: "other", label: "Other" },
+];
+const incomeCategories = [
+  { value: "income", label: "Income" },
+  { value: "loan", label: "Loan" },
+  { value: "interest", label: "Interest" },
+  { value: "other", label: "Other" },
+];
 
 export default function ScanReceiptPage() {
   const navigate = useNavigate();
@@ -18,8 +40,7 @@ export default function ScanReceiptPage() {
   const [category, setCategory] = useState('');
   const [notes, setNotes] = useState('');
   const [transactionType, setTransactionType] = useState<'income' | 'expense' | null>(null);
-  const [showTypeSelection, setShowTypeSelection] = useState(true);
-  const [showImageUpload, setShowImageUpload] = useState(false);
+  const [showImageUpload, setShowImageUpload] = useState(true); // Always true by default
   const [showCameraInterface, setShowCameraInterface] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   
@@ -36,12 +57,6 @@ export default function ScanReceiptPage() {
       }
     };
   }, [cameraStream]);
-
-  const selectTransactionType = (type: 'income' | 'expense') => {
-    setTransactionType(type);
-    setShowTypeSelection(false);
-    setShowImageUpload(true);
-  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -185,8 +200,7 @@ export default function ScanReceiptPage() {
     setCategory('');
     setNotes('');
     setTransactionType(null);
-    setShowTypeSelection(true);
-    setShowImageUpload(false);
+    setShowImageUpload(true); // Always show image upload after reset
     setShowCameraInterface(false);
     if (cameraStream) {
       cameraStream.getTracks().forEach(track => track.stop());
@@ -220,13 +234,11 @@ export default function ScanReceiptPage() {
         amount: parseFloat(amount),
         date: date || new Date().toISOString().split('T')[0],
         vendor,
-        category,
+        taxCategory: category, // <-- use taxCategory
         notes,
         userId: currentUser?.id,
-        userType: currentUser?.userType,
-        status: currentUser?.userType === 'admin' || currentUser?.userType === 'accountant' ? 'approved' : 'pending',
-        image,
         transactionType,
+        image, // <-- ADD THIS LINE
       };
 
       await uploadDocument(documentData);
@@ -253,31 +265,6 @@ export default function ScanReceiptPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <h1 className="text-2xl font-bold mb-2">Scan Receipt</h1>
-      
-      {showTypeSelection && (
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4 text-center">Select Transaction Type</h2>
-          <p className="text-gray-600 mb-6 text-center">Is this an income or expense?</p>
-          
-          <div className="flex justify-center space-x-4">
-            <button
-              onClick={() => selectTransactionType('income')}
-              className="flex items-center justify-center px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors w-full max-w-xs"
-            >
-              <TrendingUp className="mr-2" size={20} />
-              <span>Income</span>
-            </button>
-            
-            <button
-              onClick={() => selectTransactionType('expense')}
-              className="flex items-center justify-center px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors w-full max-w-xs"
-            >
-              <TrendingDown className="mr-2" size={20} />
-              <span>Expense</span>
-            </button>
-          </div>
-        </div>
-      )}
       
       {showImageUpload && !imagePreview && (
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -480,14 +467,17 @@ export default function ScanReceiptPage() {
               
               <div className="mb-4">
                 <label htmlFor="category" className="block text-gray-700 font-medium mb-2">Category</label>
-                <input
-                  type="text"
+                <select
                   id="category"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="e.g. Office Supplies, Travel, etc."
-                />
+                  required
+                >
+                  {(transactionType === 'expense' ? expenseCategories : incomeCategories).map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
               </div>
               
               <div className="mb-6">
