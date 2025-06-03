@@ -30,12 +30,19 @@ ChartJS.register(
   Title
 );
 
+// Static category options
 const categoryOptions = [
   { value: 'all', label: 'All' },
-  { value: 'business', label: 'Business Expense' },
+  { value: 'business', label: 'Business' },
   { value: 'travel', label: 'Travel' },
   { value: 'meals', label: 'Meals & Entertainment' },
   { value: 'office', label: 'Office Supplies' },
+  { value: 'insurance', label: 'Insurance' },
+  { value: 'subscriptions', label: 'Subscriptions & Software' },
+  { value: 'maintenance', label: 'Maintenance & Repairs' },
+  { value: 'income', label: 'Income' },
+  { value: 'loan', label: 'Loan' },
+  { value: 'interest', label: 'Interest' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -63,7 +70,7 @@ function getMonthOptions(receipts: any[]) {
 
 const ReportsPage: React.FC = () => {
   const { currentUser } = useAuth();
-  const [selectedCategory, setSelectedCategory] = useState(categoryOptions[0]);
+  const [selectedCategory, setSelectedCategory] = useState({ value: 'all', label: 'All' });
   const [chartData, setChartData] = useState<any>(null);
   const [allReceipts, setAllReceipts] = useState<any[]>([]);
   const [monthOptions, setMonthOptions] = useState<{ value: string; label: string }[]>([]);
@@ -184,9 +191,10 @@ const ReportsPage: React.FC = () => {
   }
 
   // --- New: Prepare category breakdown for Pie/Doughnut ---
-  function getCategoryTotals(receipts: any[]) {
+  function getCategoryTotals(receipts: any[], filterPositive = false) {
     const categoryMap: Record<string, number> = {};
     receipts.forEach((receipt: any) => {
+      if (filterPositive && receipt.amount <= 0) return; // Only positive amounts
       const cat = receipt.tax_category || 'other';
       categoryMap[cat] = (categoryMap[cat] || 0) + (receipt.amount || 0);
     });
@@ -207,15 +215,17 @@ const ReportsPage: React.FC = () => {
     );
   }
   const monthlyTotals = getMonthlyTotals(filteredReceipts);
+  // Only positive (income) for pie chart
+  const positiveCategoryTotals = getCategoryTotals(filteredReceipts, true);
+  // All for doughnut (or you can filter for negative if you want only expenses)
   const categoryTotals = getCategoryTotals(filteredReceipts);
 
-  // Pie/Doughnut: Category breakdown
   const pieData = {
-    labels: categoryTotals.labels,
+    labels: positiveCategoryTotals.labels,
     datasets: [
       {
-        label: 'Expenses by Category',
-        data: categoryTotals.values,
+        label: 'Income by Category',
+        data: positiveCategoryTotals.values,
         backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56', '#4BC0C0', '#A78BFA', '#F472B6'],
       },
     ],
@@ -325,6 +335,25 @@ const ReportsPage: React.FC = () => {
     },
   };
 
+  // Chart options for Pie and Doughnut without axes
+  const noAxesChartOptions = {
+    ...chartOptions,
+    scales: {},
+  };
+
+  // Only negative (expenses) for doughnut chart
+  const negativeCategoryTotals = getCategoryTotals(filteredReceipts.filter(r => r.amount < 0));
+  const doughnutData = {
+    labels: negativeCategoryTotals.labels,
+    datasets: [
+      {
+        label: 'Expenses by Category',
+        data: negativeCategoryTotals.values, // <-- Remove Math.abs here
+        backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56', '#4BC0C0', '#A78BFA', '#F472B6'],
+      },
+    ],
+  };
+
   return (
     <div className="p-6 md:p-12 bg-gray-50 min-h-screen">
       <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-10">
@@ -387,32 +416,34 @@ const ReportsPage: React.FC = () => {
             </button>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-          <div className="bg-gray-100 rounded-lg shadow p-4 flex flex-col items-center" style={{ minHeight: 400 }}>
+        {/* Each chart in its own row */}
+        <div className="mb-8">
+          <div className="bg-gray-100 rounded-lg shadow p-4 flex flex-col items-center mb-8" style={{ minHeight: 400 }}>
             <div className="w-full h-72">
               <Line data={lineData} options={chartOptions} />
             </div>
-            <div className="text-center mt-4 font-semibold text-indigo-600">Expenses Over Time</div>
+            <div className="text-center mt-4 font-semibold text-indigo-600">Result Over Time</div>
           </div>
-          <div className="bg-gray-100 rounded-lg shadow p-4 flex flex-col items-center" style={{ minHeight: 400 }}>
-            <div className="w-full h-72">
-              <Pie data={pieData} options={chartOptions} />
-            </div>
-            <div className="text-center mt-4 font-semibold text-indigo-600">Category Breakdown</div>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-gray-100 rounded-lg shadow p-4 flex flex-col items-center" style={{ minHeight: 400 }}>
+          {/* Category Comparison */}
+          <div className="bg-gray-100 rounded-lg shadow p-4 flex flex-col items-center mb-8" style={{ minHeight: 400 }}>
             <div className="w-full h-72">
               <Bar data={barData} options={barChartOptions} />
             </div>
-            <div className="text-center mt-4 font-semibold text-indigo-600">Category Comparison</div>
+            <div className="text-center mt-4 font-semibold text-indigo-600">Income & Expense Overview</div>
           </div>
+          {/* Category Breakdown (Pie) - no axes */}
+          <div className="bg-gray-100 rounded-lg shadow p-4 flex flex-col items-center mb-8" style={{ minHeight: 400 }}>
+            <div className="w-full h-72">
+              <Pie data={pieData} options={noAxesChartOptions} />
+            </div>
+            <div className="text-center mt-4 font-semibold text-indigo-600">Income Breakdown</div>
+          </div>
+          {/* Category Share (Doughnut) - no axes */}
           <div className="bg-gray-100 rounded-lg shadow p-4 flex flex-col items-center" style={{ minHeight: 400 }}>
             <div className="w-full h-72">
-              <Doughnut data={pieData} options={chartOptions} />
+              <Doughnut data={doughnutData} options={noAxesChartOptions} />
             </div>
-            <div className="text-center mt-4 font-semibold text-indigo-600">Category Share</div>
+            <div className="text-center mt-4 font-semibold text-indigo-600">Expense Breakdown</div>
           </div>
         </div>
       </div>

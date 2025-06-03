@@ -13,40 +13,54 @@ export default function ManualEntryPage() {
     amount: '',
     vendor: '',
     taxCategory: 'business',
-    notes: ''
+    notes: '',
+    type: 'expense', // new field: 'income' or 'expense'
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => {
+      // If type changes, reset taxCategory to default for that type
+      if (name === 'type') {
+        return {
+          ...prev,
+          type: value,
+          taxCategory: value === 'expense' ? 'business' : 'income'
+        };
+      }
+      return {
+        ...prev,
+        [name]: value
+      };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!currentUser) return;
-    
     try {
       setLoading(true);
-      
+
+      // If expense, make amount negative
+      let amount = parseFloat(formData.amount) || 0;
+      if (formData.type === 'expense' && amount > 0) {
+        amount = -amount;
+      }
+
       const { error } = await supabase
         .from('receipts')
         .insert({
           date: formData.date,
-          amount: parseFloat(formData.amount) || 0,
+          amount,
           vendor: formData.vendor,
           tax_category: formData.taxCategory,
           notes: formData.notes,
-          user_id: currentUser.id
+          user_id: currentUser.id,
+          type: formData.type,
         });
-      
+
       if (error) throw error;
-      
       navigate('/');
-      
     } catch (error) {
       console.error('Error saving receipt:', error);
       alert('Error saving receipt. Please try again.');
@@ -58,14 +72,27 @@ export default function ManualEntryPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Manual Receipt Entry</h1>
-      
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center">
           <FileText className="h-5 w-5 text-indigo-600 mr-2" />
           <h2 className="text-xl font-semibold text-gray-800">Receipt Details</h2>
         </div>
-        
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Type selector at the top */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+            <select
+              name="type"
+              value={formData.type}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              required
+            >
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+            </select>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
@@ -93,39 +120,58 @@ export default function ManualEntryPage() {
               />
             </div>
           </div>
-          
-          <div>
-  					<label className="block text-sm font-medium text-gray-700 mb-1">
-    				Vendor
-						</label>
-  					<input
-				    type="text"
-				    name="vendor"
-				    value={formData.vendor}
-				    onChange={handleInputChange}
-				    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-				    placeholder="Vendor name"
-				    required
-				 		 />
-					</div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tax Category</label>
-            <select
-              name="taxCategory"
-              value={formData.taxCategory}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              required
-            >
-              <option value="business">Business Expense</option>
-              <option value="travel">Travel</option>
-              <option value="meals">Meals & Entertainment</option>
-              <option value="office">Office Supplies</option>
-              <option value="other">Other</option>
-            </select>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Vendor</label>
+              <input
+                type="text"
+                name="vendor"
+                value={formData.vendor}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Vendor name"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <select
+                name="taxCategory"
+                value={formData.taxCategory}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                required
+              >
+                {/* Expense categories */}
+                {formData.type === 'expense' && (
+                  <>
+                    <option value="business">Business Expense (General)</option>
+                    <option value="travel">Travel</option>
+                    <option value="meals">Meals & Entertainment</option>
+                    <option value="office">Office Supplies</option>
+                    <option value="marketing">Marketing & Advertising</option>
+                    <option value="utilities">Utilities</option>
+                    <option value="rent">Rent</option>
+                    <option value="insurance">Insurance</option>
+                    <option value="subscriptions">Subscriptions & Software</option>
+                    <option value="maintenance">Maintenance & Repairs</option>
+                    <option value="other">Other</option>
+                  </>
+                )}
+                {/* Income categories */}
+                {formData.type === 'income' && (
+                  <>
+                    <option value="income">Income</option>
+                    <option value="loan">Loan</option>
+                    <option value="interest">Interest</option>
+                    <option value="other">Other</option>
+                  </>
+                )}
+              </select>
+            </div>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
             <textarea
@@ -137,7 +183,7 @@ export default function ManualEntryPage() {
               placeholder="Additional notes..."
             />
           </div>
-          
+
           <div className="flex justify-end">
             <button
               type="submit"

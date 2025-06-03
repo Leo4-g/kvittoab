@@ -34,3 +34,13 @@ export interface Category {
   type: 'income' | 'expense';
   user_id?: string;
 }
+
+export interface Company {
+  id: number;
+  user_id: string;
+  name: string;
+  address?: string;
+  phone?: string;
+  info?: string;
+  created_at?: string;
+}
