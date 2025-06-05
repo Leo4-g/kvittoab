@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Receipt } from '../types';
@@ -17,7 +17,6 @@ export default function HomePage() {
   const [filterVendor, setFilterVendor] = useState('');
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
-  const [modalImage, setModalImage] = useState<string | null>(null);
 
   // Get unique categories and vendors for filter dropdowns
   const categories = Array.from(new Set(receipts.map(r => r.tax_category).filter(Boolean)));
@@ -131,29 +130,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Image Modal */}
-      {modalImage && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70"
-          onClick={() => setModalImage(null)}
-        >
-          <div className="relative">
-            <img
-              src={modalImage}
-              alt="Receipt Large"
-              className="max-h-[80vh] max-w-[90vw] rounded shadow-lg border-4 border-white"
-              onClick={e => e.stopPropagation()}
-            />
-            <button
-              className="absolute top-2 right-2 bg-white rounded-full p-1 shadow hover:bg-gray-200"
-              onClick={() => setModalImage(null)}
-            >
-              <span className="text-xl font-bold">&times;</span>
-            </button>
-          </div>
-        </div>
-      )}
-
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center px-6 py-4 bg-gray-50 border-b border-gray-200 gap-4">
           <h2 className="text-xl font-semibold text-gray-800">Recent Receipts</h2>
@@ -232,18 +208,8 @@ export default function HomePage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {sortedReceipts.map((receipt) => (
                   <tr key={receipt.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 flex items-center gap-2">
-                      {/* Show image if available */}
-                      {receipt.image_url && (
-                        <img
-                          src={receipt.image_url}
-                          alt="Receipt"
-                          className="w-12 h-12 object-cover rounded border border-gray-200 cursor-pointer"
-                          style={{ minWidth: 48, minHeight: 48 }}
-                          onClick={() => setModalImage(receipt.image_url)}
-                        />
-                      )}
-                      <span>{new Date(receipt.date).toLocaleDateString()}</span>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {new Date(receipt.date).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{receipt.vendor}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${receipt.amount.toFixed(2)}</td>

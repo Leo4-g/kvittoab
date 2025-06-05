@@ -1,27 +1,19 @@
-import { analyzeReceiptImage, extractReceiptInfo } from './googleVision';
 import { supabase } from '../supabase';
 
-// Process receipt with OCR
+// Only frontend code here!
 export async function processReceiptWithOCR(file: File) {
-  try {
-    // Convert file to base64
-    const base64Image = await fileToBase64(file);
-    
-    // Call Google Vision API
-    const visionResponse = await analyzeReceiptImage(base64Image);
-    
-    // Extract receipt information
-    if (visionResponse.error) {
-      console.error('Vision API error:', visionResponse.error);
-      return null;
-    }
-    
-    const receiptInfo = extractReceiptInfo(visionResponse);
-    return receiptInfo;
-  } catch (error) {
-    console.error('Error processing receipt with OCR:', error);
-    throw error;
-  }
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('http://localhost:3001/api/ocr', {
+    method: 'POST',
+    body: formData,
+  });
+
+  const result = await response.json();
+  if (result.error) throw new Error(result.error);
+
+  return { text: result.text };
 }
 
 // Upload document to storage and database
@@ -36,7 +28,7 @@ export async function uploadDocument(documentData: any) {
       notes,
       userId,
       transactionType,
-      image, // <-- Pass the File object here
+      image,
     } = documentData;
 
     let imageUrl = null;
@@ -72,7 +64,7 @@ export async function uploadDocument(documentData: any) {
       user_id: userId,
       type: transactionType,
       title,
-      image_url: imageUrl, // <-- Save the image URL
+      image_url: imageUrl,
     });
 
     if (error) throw error;
@@ -81,15 +73,5 @@ export async function uploadDocument(documentData: any) {
     console.error('Error uploading document:', error);
     throw error;
   }
-}
-
-// Helper function to convert File to base64
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-  });
 }
 

@@ -165,21 +165,38 @@ export default function ScanReceiptPage() {
     }
   };
 
+  function extractReceiptFields(text: string) {
+    // Amount: look for the last number with 2 decimals (often the total)
+    const amountMatch = text.match(/(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})/g);
+    const amount = amountMatch ? amountMatch[amountMatch.length - 1].replace(',', '.') : '';
+
+    // Date: look for common date formats
+    const dateMatch = text.match(/(\d{4}[-/.]\d{2}[-/.]\d{2})|(\d{2}[-/.]\d{2}[-/.]\d{4})/);
+    const date = dateMatch ? dateMatch[0].replace(/\//g, '-').replace(/\./g, '-') : '';
+
+    // Vendor: use the first non-empty line as vendor
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    const vendor = lines.length > 0 ? lines[0] : '';
+
+    return { amount, date, vendor };
+  }
+
   const processImage = async (file: File) => {
     setProcessing(true);
-    
+
     try {
       // Process with OCR
       const result = await processReceiptWithOCR(file);
-      
+
       setOcrResult(result);
-      
-      // Pre-fill form with extracted data
-      if (result) {
-        if (result.amount) setAmount(result.amount.toString());
-        if (result.date) setDate(result.date);
-        if (result.vendor) setVendor(result.vendor);
-        setTitle(`Receipt from ${result.vendor || 'Unknown'}`);
+
+      // Extract fields from OCR text
+      if (result && result.text) {
+        const { amount, date, vendor } = extractReceiptFields(result.text);
+        if (amount) setAmount(amount);
+        if (date) setDate(date);
+        if (vendor) setVendor(vendor);
+        setTitle(`Receipt from ${vendor || 'Unknown'}`);
       }
     } catch (error) {
       console.error('Error processing image:', error);
